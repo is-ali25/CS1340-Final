@@ -21,15 +21,15 @@ if (
     // engine.block.setWidthMode(page, "Percent");
     engine.block.setWidth(page, 1000);
     engine.block.setHeight(page, 1000);
-    const pages = engine.scene.getPages();
+    // const pages = engine.scene.getPages();
     const pageWidth = engine.block.getWidth(page);
     const pageHeight = engine.block.getHeight(page);
     engine.block.setPositionX(page, -pageWidth / 2);
     engine.block.setPositionY(page, -pageHeight / 2);
     engine.block.setFill(page, engine.block.createFill("color"));
     engine.block.appendChild(scene, page);
-    const pageProps = engine.block.findAllProperties(page);
-    console.log(pageProps);
+    // const pageProps = engine.block.findAllProperties(page);
+    // console.log(pageProps);
 
     let solidColor = engine.block.createFill("color");
     const color1 = { r: 1, g: 0.9, b: 0.2, a: 1 };
@@ -59,37 +59,47 @@ if (
     engine.block.setPositionY(blob, 0.55);
     engine.block.setPositionYMode(blob, "Percent");
 
-    //line between nodes
-    const x1 =
-      engine.block.getPositionX(block) +
-      engine.block.getWidth(block) / (2 * pageWidth);
-    const y1 =
-      engine.block.getPositionY(block) +
-      engine.block.getHeight(block) / (2 * pageHeight);
-    const x2 =
-      engine.block.getPositionX(blob) +
-      engine.block.getWidth(blob) / (2 * pageWidth);
-    const y2 =
-      engine.block.getPositionY(blob) +
-      engine.block.getHeight(blob) / (2 * pageHeight);
-
     let line = engine.block.create("graphic");
     let lineFill = engine.block.createFill("color");
     const lineColor = { r: 0.8, g: 0.2, b: 1, a: 0.8 };
     engine.block.setColor(lineFill, "fill/color/value", lineColor);
     engine.block.setShape(line, engine.block.createShape("line"));
     engine.block.setFill(line, lineFill);
-    engine.block.setWidth(line, distance(x1, y1, x2, y2) * pageWidth);
     engine.block.setHeight(line, 3);
 
     engine.block.appendChild(page, line);
-    engine.block.setPositionX(line, x1);
-    engine.block.setPositionXMode(line, "Percent");
-    engine.block.setPositionY(line, y1);
-    engine.block.setPositionYMode(line, "Percent");
-    let angle = Math.acos(cos(x2 - x1, y2 - y1, 1, 0)); //angle b/w (1,0) and vector pointing from point1 to point2
-    engine.block.setRotation(line, angle);
-    engine.block.sendToBack(line);
+
+    //edge between nodes
+    setInterval(() => {
+      const x1 =
+        engine.block.getPositionX(block) +
+        engine.block.getWidth(block) / (2 * pageWidth);
+      const y1 =
+        engine.block.getPositionY(block) +
+        engine.block.getHeight(block) / (2 * pageHeight);
+      const x2 =
+        engine.block.getPositionX(blob) +
+        engine.block.getWidth(blob) / (2 * pageWidth);
+      const y2 =
+        engine.block.getPositionY(blob) +
+        engine.block.getHeight(blob) / (2 * pageHeight);
+
+      engine.block.setWidth(line, distance(x1, y1, x2, y2) * pageWidth);
+      engine.block.setPositionX(line, x1);
+      engine.block.setPositionXMode(line, "Percent");
+      engine.block.setPositionY(line, y1);
+      engine.block.setPositionYMode(line, "Percent");
+      let angle = Math.acos(cos(x2 - x1, y2 - y1, 1, 0)); //angle b/w (1,0) and vector pointing from point1 to point2
+      engine.block.setRotation(line, angle);
+      engine.block.sendToBack(line);
+    }, 30);
+
+    let toggle = 0.01;
+    setInterval(() => {
+      let xCoord = 0.25 + toggle;
+      engine.block.setPositionX(block, xCoord);
+      toggle = (toggle + 0.01) % 0.5;
+    }, 100);
 
     //append scene to HTML
     document.getElementById("cesdk_container").append(engine.element);
