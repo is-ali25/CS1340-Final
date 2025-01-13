@@ -17,52 +17,57 @@ if (
   CreativeEngine.init(config).then(async (engine) => {
     //SETTING SOME VARIABLES
     const color1 = { r: 1, g: 0.9, b: 0.2, a: 1 };
-    const color2 = { r: 1, g: 0.3, b: 0, a: 1 };
+    const color2 = { r: 0, g: 1, b: 0.5, a: 1 };
     const lineColor = { r: 0.8, g: 0.2, b: 1, a: 0.8 };
     let nodeFill = engine.block.createFill("color");
     engine.block.setColor(nodeFill, "fill/color/value", color1);
+    let nodes = [];
+    let edges = [];
+    let connect = [];
 
     //DECLARING FUNCTIONS
+
+    function setPos(ele, x, y) {
+      engine.block.setPositionX(ele, x);
+      engine.block.setPositionY(ele, y);
+    }
+
     function createNode() {
       let node = engine.block.create("graphic");
       engine.block.setShape(node, engine.block.createShape("ellipse"));
       engine.block.setFill(node, nodeFill);
-      engine.block.setStrokeEnabled(node, true);
-      engine.block.setStrokeColor(node, color2);
+      nodes[nodes.length] = node;
+      // console.log(nodes);
       return node;
+    }
+
+    function createEdge() {
+      let line = engine.block.create("graphic");
+      let lineFill = engine.block.createFill("color");
+      engine.block.setColor(lineFill, "fill/color/value", lineColor);
+      engine.block.setShape(line, engine.block.createShape("line"));
+      engine.block.setFill(line, lineFill);
+      engine.block.setHeight(line, 3);
+      edges[edges.length] = [line, connect[0], connect[1]];
+      // console.log(edges);
+      return line;
     }
 
     function updateEdge(edge, start, end) {
       const x1 =
-        engine.block.getPositionX(block) + engine.block.getWidth(block) / 2;
-      const y1 =
-        engine.block.getPositionY(block) + engine.block.getHeight(block) / 2;
-      const x2 =
-        engine.block.getPositionX(blob) + engine.block.getWidth(blob) / 2;
-      const y2 =
-        engine.block.getPositionY(blob) + engine.block.getHeight(blob) / 2;
-
-      engine.block.setWidth(line, distance(x1, y1, x2, y2));
-      engine.block.setPositionX(line, x1);
-      engine.block.setPositionY(line, y1);
-      let angle = Math.acos(cos(x2 - x1, y2 - y1, 1, 0)); //angle b/w (1,0) and vector pointing from point1 to point2
-      engine.block.setRotation(line, angle);
-    }
-
-    function getEdgeCoords(start, end) {
-      let result = [];
-
-      //get coords
-      result[0] =
         engine.block.getPositionX(start) + engine.block.getWidth(start) / 2;
-      result[1] =
+      const y1 =
         engine.block.getPositionY(start) + engine.block.getHeight(start) / 2;
-      result[2] =
+      const x2 =
         engine.block.getPositionX(end) + engine.block.getWidth(end) / 2;
-      result[3] =
+      const y2 =
         engine.block.getPositionY(end) + engine.block.getHeight(end) / 2;
 
-      return result;
+      engine.block.setWidth(edge, distance(x1, y1, x2, y2));
+      setPos(edge, x1, y1);
+      let angle = Math.acos(cos(x2 - x1, y2 - y1, 1, 0)); //angle b/w (1,0) and vector pointing from point1 to point2
+      if (y2 < y1) angle *= -1; //have to reverse angle to account for reversed y-coordinates
+      engine.block.setRotation(edge, angle);
     }
 
     //DRAWING THE SCENE
@@ -83,40 +88,53 @@ if (
     // console.log(pageProps);
 
     //shapes
-    let block = createNode();
-    engine.block.appendChild(page, block);
-    engine.block.setPositionX(block, 250);
-    engine.block.setPositionY(block, 250);
+    document.addEventListener("keydown", (e) => {
+      // console.log(e.key);
+      if (e.key === "n") {
+        let block = createNode();
+        engine.block.appendChild(page, block);
+        setPos(block, 550, 500);
+      }
 
-    let blob = createNode();
-    engine.block.appendChild(page, blob);
-    engine.block.setPositionX(blob, 700);
-    engine.block.setPositionY(blob, 550);
+      if (e.key === "e") {
+        if (connect.length === 2) {
+          let edge = createEdge();
+          engine.block.appendChild(page, edge);
+          engine.block.sendToBack(edge);
+          connect = [];
+        }
+      }
 
-    let line = engine.block.create("graphic");
-    let lineFill = engine.block.createFill("color");
-    engine.block.setColor(lineFill, "fill/color/value", lineColor);
-    engine.block.setShape(line, engine.block.createShape("line"));
-    engine.block.setFill(line, lineFill);
-    engine.block.setHeight(line, 3);
+      if (e.key === "Escape") {
+        connect = [];
+      }
+    });
 
-    engine.block.appendChild(page, line);
-    engine.block.sendToBack(line);
-
-    // setInterval(updateEdge(line, block, blob), 30);
-    // updateEdge(line, block, blob);
+    engine.block.onClicked((block) => {
+      console.log("Block clicked: ", block);
+      if (nodes.find((ele) => ele === block) != undefined) {
+        if (connect.length == 1) {
+          connect[1] = block;
+        } else {
+          connect = [];
+          connect[0] = block;
+        }
+      }
+    });
 
     setInterval(() => {
-      let edgeCoords = getEdgeCoords(block, blob);
-      const x1 = edgeCoords[0];
-      const y1 = edgeCoords[1];
-      const x2 = edgeCoords[2];
-      const y2 = edgeCoords[3];
-      engine.block.setWidth(line, distance(x1, y1, x2, y2));
-      engine.block.setPositionX(line, x1);
-      engine.block.setPositionY(line, y1);
-      let angle = Math.acos(cos(x2 - x1, y2 - y1, 1, 0)); //angle b/w (1,0) and vector pointing from point1 to point2
-      engine.block.setRotation(line, angle);
+      nodes.forEach((node) => {
+        if (connect.find((n) => n === node)) {
+          engine.block.setStrokeEnabled(node, true);
+          engine.block.setStrokeColor(node, color2);
+        } else {
+          engine.block.setStrokeEnabled(node, false);
+        }
+      });
+
+      edges.forEach((edge) => {
+        updateEdge(edge[0], edge[1], edge[2]);
+      });
     }, 30);
 
     //APPEND SCENE TO HTML
@@ -133,15 +151,12 @@ function distance(x1, y1, x2, y2) {
 
 function dot(x1, y1, x2, y2) {
   const dot = x1 * x2 + y1 * y2;
-  // console.log(dot);
   return dot;
 }
 
 function cos(x1, y1, x2, y2) {
   const mag1 = Math.sqrt(Math.pow(x1, 2) + Math.pow(y1, 2));
   const mag2 = Math.sqrt(Math.pow(x2, 2) + Math.pow(y2, 2));
-  // console.log(mag1, mag2);
   const cos = dot(x1, y1, x2, y2) / (mag1 * mag2);
-  // console.log(cos);
   return cos;
 }
