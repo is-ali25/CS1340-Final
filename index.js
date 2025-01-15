@@ -19,11 +19,13 @@ if (
     const color1 = { r: 1, g: 0.9, b: 0.2, a: 1 };
     const color2 = { r: 0, g: 1, b: 0.5, a: 1 };
     const lineColor = { r: 0.8, g: 0.2, b: 1, a: 0.8 };
+    const selectedLineColor = { r: 0.8, g: 0.6, b: 0, a: 0.8 };
     let nodeFill = engine.block.createFill("color");
     engine.block.setColor(nodeFill, "fill/color/value", color1);
     let nodes = [];
     let edges = [];
     let connect = [];
+    let selected = null;
 
     //DECLARING FUNCTIONS
 
@@ -89,11 +91,13 @@ if (
 
     //shapes
     document.addEventListener("keydown", (e) => {
-      // console.log(e.key);
+      console.log(e.key);
       if (e.key === "n") {
         let block = createNode();
         engine.block.appendChild(page, block);
-        setPos(block, 550, 500);
+        setPos(block, pageWidth / 2, pageHeight / 2);
+        const mouse = new MouseEvent();
+        console.log(mouse.ClientX, mouse.ClientY);
       }
 
       if (e.key === "e") {
@@ -107,6 +111,33 @@ if (
 
       if (e.key === "Escape") {
         connect = [];
+        selected = null;
+      }
+
+      if (e.key === "Backspace") {
+        if (selected === null || selected === page) return;
+
+        console.log("Deleting: ", selected);
+
+        edges.forEach((edge) => {
+          if (edge[0] === selected) {
+            edges = edges.filter((ele) => {
+              return ele !== edge;
+            });
+          }
+          if (edge[1] === selected || edge[2] === selected) {
+            edges = edges.filter((ele) => {
+              return ele !== edge;
+            });
+            engine.block.destroy(edge[0]);
+          }
+        });
+
+        nodes = nodes.filter((ele) => {
+          return ele !== selected;
+        });
+
+        engine.block.destroy(selected);
       }
     });
 
@@ -120,6 +151,15 @@ if (
           connect[0] = block;
         }
       }
+
+      selected = block;
+    });
+
+    document.addEventListener("dblclick", (e) => {
+      let block = createNode();
+      engine.block.appendChild(page, block);
+      setPos(block, e.clientX - 100, e.clientY + 80);
+      console.log(e.clientX, e.clientY);
     });
 
     setInterval(() => {
@@ -133,6 +173,12 @@ if (
       });
 
       edges.forEach((edge) => {
+        if (selected === edge[0]) {
+          engine.block.setStrokeEnabled(edge[0], true);
+          engine.block.setStrokeColor(edge[0], selectedLineColor);
+        } else {
+          engine.block.setStrokeEnabled(edge[0], false);
+        }
         updateEdge(edge[0], edge[1], edge[2]);
       });
     }, 30);
